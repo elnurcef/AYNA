@@ -2,4 +2,6 @@ namespace Backend.Models;
 
 public sealed record LiveRouteSnapshot(
     DateTimeOffset LastUpdatedUtc,
-    IReadOnlyList<RouteVehiclePosition> Vehicles);
+    string Provider,
+    int TotalRoutes,
+    IReadOnlyList<LiveRouteDto> Routes);

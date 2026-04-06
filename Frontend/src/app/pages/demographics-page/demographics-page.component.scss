@@ -1,3 +1,44 @@
 :host {
   display: block;
 }
+
+:host ::ng-deep .leaflet-demographics-legend {
+  min-width: 184px;
+  padding: 0.9rem 1rem;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.16);
+  color: #0f172a;
+}
+
+:host ::ng-deep .leaflet-demographics-legend .legend-title {
+  margin-bottom: 0.65rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #164e63;
+}
+
+:host ::ng-deep .leaflet-demographics-legend .legend-row {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  font-size: 0.86rem;
+}
+
+:host ::ng-deep .leaflet-demographics-legend .legend-row + .legend-row {
+  margin-top: 0.35rem;
+}
+
+:host ::ng-deep .leaflet-demographics-legend .legend-swatch {
+  width: 0.95rem;
+  height: 0.95rem;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+:host ::ng-deep .leaflet-demographics-legend .legend-empty {
+  margin: 0;
+  color: var(--dashboard-muted-soft);
+}

@@ -4,4 +4,5 @@ namespace Backend.Hubs;
 
 public sealed class RoutesHub : Hub
 {
+    public const string RoutesUpdatedEvent = "routesUpdated";
 }

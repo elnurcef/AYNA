@@ -1,34 +1,31 @@
 <div class="app-shell">
-  <mat-toolbar class="top-nav">
-    <a class="brand" routerLink="/demographics">AYNA Transit Dashboard</a>
-    <span class="spacer"></span>
-    <nav class="nav-links" aria-label="Primary">
-      <a
-        mat-button
-        routerLink="/demographics"
-        routerLinkActive="active-link"
-        [routerLinkActiveOptions]="{ exact: true }"
-      >
-        Demographics
-      </a>
-      <a
-        mat-button
-        routerLink="/bus-analytics"
-        routerLinkActive="active-link"
-      >
-        Bus Analytics
-      </a>
-      <a
-        mat-button
-        routerLink="/live-routes"
-        routerLinkActive="active-link"
-      >
-        Live Routes
-      </a>
-    </nav>
-  </mat-toolbar>
+  <header class="shell-header">
+    <mat-toolbar class="top-nav">
+      <div class="top-nav__inner">
+        <a class="brand" routerLink="/demographics">
+          <span class="brand__eyebrow">Transit Intelligence</span>
+          <span class="brand__title">AYNA Dashboard</span>
+        </a>
 
-  <main class="content-area">
+        <nav class="nav-links" aria-label="Primary">
+          @for (item of navItems; track item.route) {
+            <a
+              mat-button
+              class="nav-link"
+              [routerLink]="item.route"
+              routerLinkActive="active-link"
+              [routerLinkActiveOptions]="{ exact: item.exact }"
+              ariaCurrentWhenActive="page"
+            >
+              {{ item.label }}
+            </a>
+          }
+        </nav>
+      </div>
+    </mat-toolbar>
+  </header>
+
+  <main class="content-area" role="main">
     <router-outlet />
   </main>
 </div>

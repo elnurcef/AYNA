@@ -1,3 +1,4 @@
+using Backend.Models;
 using Backend.Services;
 
 namespace Backend.Endpoints;
@@ -18,7 +19,17 @@ public static class RouteLiveEndpoints
         IRouteLiveService routeLiveService,
         CancellationToken cancellationToken)
     {
-        var response = await routeLiveService.GetCurrentSnapshotAsync(cancellationToken);
-        return Results.Ok(response);
+        try
+        {
+            var response = await routeLiveService.GetCurrentSnapshotAsync(cancellationToken);
+            return Results.Ok(response);
+        }
+        catch (LiveRouteProviderException exception)
+        {
+            return Results.Problem(
+                title: "Live routes are unavailable.",
+                detail: exception.Message,
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
     }
 }

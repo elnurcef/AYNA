@@ -4,6 +4,8 @@ import { Observable } from 'rxjs';
 
 import { API_BASE_URL } from '../core/config/api-base-url.token';
 import { BusAnalyticsQuery, BusAnalyticsResponse } from '../models/bus-analytics.models';
+import { DemographicsFeatureCollection, DemographicsQuery } from '../models/demographics.models';
+import { LiveRouteSnapshot } from '../models/live-routes.models';
 
 @Injectable({
   providedIn: 'root'
@@ -33,5 +35,19 @@ export class ApiService {
     }
 
     return this.http.get<BusAnalyticsResponse>(`${this.apiBaseUrl}/api/bus-analytics`, { params });
+  }
+
+  getDemographics(query: DemographicsQuery): Observable<DemographicsFeatureCollection> {
+    const params = new HttpParams()
+      .set('level', query.level)
+      .set('metric', query.metric);
+
+    return this.http.get<DemographicsFeatureCollection>(`${this.apiBaseUrl}/api/demographics`, {
+      params
+    });
+  }
+
+  getLiveRoutes(): Observable<LiveRouteSnapshot> {
+    return this.http.get<LiveRouteSnapshot>(`${this.apiBaseUrl}/api/routes/live`);
   }
 }

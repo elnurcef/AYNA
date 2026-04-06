@@ -1,15 +1,155 @@
-<section class="page-shell">
-  <header class="page-header">
-    <p class="eyebrow">Real Time</p>
-    <h1>Live Routes</h1>
-    <p>
-      Starter view for a Leaflet-powered route map and future SignalR-driven vehicle position updates.
-    </p>
+<section class="dashboard-page">
+  <header class="dashboard-page-header">
+    <div class="dashboard-page-header__copy">
+      <p class="eyebrow">Real Time</p>
+      <h1 class="dashboard-page-header__title">Live Routes</h1>
+      <p class="dashboard-page-header__description">
+        Route geometry is loaded from the backend and refreshed in place whenever SignalR pushes a
+        new snapshot.
+      </p>
+    </div>
+
+    <div class="dashboard-kpi">
+      <strong class="dashboard-kpi__value">{{ visibleRoutes.length | number }}</strong>
+      <span class="dashboard-kpi__label">Routes visible</span>
+    </div>
   </header>
 
-  <mat-card class="page-card">
-    <mat-card-content>
-      Connect this page to <code>GET /api/routes/live</code> now and <code>/hubs/routes</code> when live updates are enabled.
-    </mat-card-content>
-  </mat-card>
+  <section class="dashboard-surface dashboard-map-shell live-routes-shell">
+    <div class="dashboard-toolbar live-routes-toolbar">
+      <div class="dashboard-toolbar__group live-routes-toolbar__filter">
+        <span class="dashboard-toolbar__label">Route filter</span>
+
+        <mat-form-field appearance="outline" class="dashboard-inline-filter">
+          <mat-label>Filter routes</mat-label>
+          <input
+            matInput
+            [formControl]="filterControl"
+            placeholder="Route number, endpoint, carrier, or region"
+          />
+          <button
+            mat-icon-button
+            matSuffix
+            type="button"
+            aria-label="Clear filter"
+            [disabled]="!filterControl.value"
+            (click)="clearFilter()"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+        </mat-form-field>
+      </div>
+
+      <div class="status-strip">
+        <span class="dashboard-status-pill" [class]="connectionState">
+          <span class="dashboard-status-pill__dot"></span>
+          {{ connectionState | titlecase }}
+        </span>
+
+        <span class="dashboard-meta">
+          Updated:
+          {{
+            latestSnapshot?.lastUpdatedUtc
+              ? (latestSnapshot?.lastUpdatedUtc | date: 'mediumTime')
+              : 'n/a'
+          }}
+        </span>
+
+        <button
+          mat-stroked-button
+          type="button"
+          class="reconnect-button"
+          (click)="reconnect()"
+          [disabled]="connectionState === 'connecting'"
+        >
+          <mat-icon>sync</mat-icon>
+          Reconnect
+        </button>
+      </div>
+    </div>
+
+    @if (isLoading) {
+      <mat-progress-bar class="dashboard-progress-bar" mode="indeterminate" />
+    }
+
+    <div class="live-routes-layout">
+      <div class="dashboard-map-stage">
+        <div #mapContainer class="dashboard-map-canvas" aria-label="Live routes map"></div>
+
+        @if (isLoading && !latestSnapshot) {
+          <div class="dashboard-map-overlay">
+            <app-dashboard-state
+              mode="loading"
+              title="Loading live routes"
+              message="Fetching the latest active route geometry from the backend."
+            />
+          </div>
+        } @else if (!isLoading && errorMessage) {
+          <div class="dashboard-map-overlay">
+            <app-dashboard-state
+              mode="error"
+              title="Live route data unavailable"
+              [message]="errorMessage"
+            />
+          </div>
+        } @else if (!isLoading && latestSnapshot && visibleRoutes.length === 0) {
+          <div class="dashboard-map-overlay">
+            <app-dashboard-state
+              mode="empty"
+              title="No routes match the current filter"
+              message="Try a broader route number or clear the filter to restore all routes."
+            />
+          </div>
+        }
+      </div>
+
+      <aside class="dashboard-panel-card live-routes-summary">
+        <p class="panel-label">Snapshot</p>
+        <h2>{{ visibleRoutes.length | number }}</h2>
+        <p class="panel-copy">
+          Routes currently rendered on the map.
+          @if (latestSnapshot && visibleRoutes.length !== latestSnapshot.totalRoutes) {
+            <span>Filtered from {{ latestSnapshot.totalRoutes | number }} total.</span>
+          }
+        </p>
+
+        <div class="meta-grid">
+          <div>
+            <span>Provider</span>
+            <strong>{{ latestSnapshot?.provider ?? 'n/a' | titlecase }}</strong>
+          </div>
+
+          <div>
+            <span>Updated</span>
+            <strong>
+              {{
+                latestSnapshot?.lastUpdatedUtc
+                  ? (latestSnapshot?.lastUpdatedUtc | date: 'mediumTime')
+                  : 'n/a'
+              }}
+            </strong>
+          </div>
+        </div>
+
+        @if (visibleRoutes.length) {
+          <div class="route-list">
+            @for (route of visibleRoutes.slice(0, 6); track trackByRouteId($index, route)) {
+              <div class="route-chip">
+                <div class="route-chip__content">
+                  <strong>{{ route.routeNumber }}</strong>
+                  <span>{{ route.firstPoint }} to {{ route.lastPoint }}</span>
+                </div>
+
+                <span
+                  class="route-chip__swatch"
+                  [style.background-color]="getRouteColor(route.routeNumber)"
+                  [attr.aria-label]="'Route ' + route.routeNumber + ' color'"
+                ></span>
+              </div>
+            }
+          </div>
+        }
+      </aside>
+    </div>
+  </section>
 </section>

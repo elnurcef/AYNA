@@ -1,6 +1,6 @@
 import { DecimalPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { AfterViewInit, Component, DestroyRef, ViewChild, inject } from '@angular/core';
+import { Component, DestroyRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
@@ -13,7 +13,7 @@ import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
-import { debounceTime } from 'rxjs';
+import { Subscription, debounceTime } from 'rxjs';
 
 import { ApiService } from '../../services/api.service';
 import {
@@ -21,6 +21,7 @@ import {
   BusAnalyticsQuery,
   BusAnalyticsSortBy
 } from '../../models/bus-analytics.models';
+import { DashboardStateComponent } from '../../shared/components/dashboard-state/dashboard-state.component';
 
 @Component({
   selector: 'app-bus-analytics-page',
@@ -37,14 +38,50 @@ import {
     MatPaginatorModule,
     MatProgressBarModule,
     MatSortModule,
-    MatTableModule
+    MatTableModule,
+    DashboardStateComponent
   ],
   templateUrl: './bus-analytics-page.component.html',
   styleUrl: './bus-analytics-page.component.scss'
 })
-export class BusAnalyticsPageComponent implements AfterViewInit {
-  @ViewChild(MatPaginator) private paginator!: MatPaginator;
-  @ViewChild(MatSort) private sort!: MatSort;
+export class BusAnalyticsPageComponent implements OnInit, OnDestroy {
+  @ViewChild(MatPaginator)
+  set paginator(value: MatPaginator | undefined) {
+    this.paginatorSubscription?.unsubscribe();
+    this.paginatorRef = value;
+
+    if (!value) {
+      return;
+    }
+
+    value.pageIndex = this.pageIndex;
+    value.pageSize = this.pageSize;
+
+    this.paginatorSubscription = value.page.subscribe((event) => {
+      this.pageIndex = event.pageIndex;
+      this.pageSize = event.pageSize;
+      this.loadBusAnalytics();
+    });
+  }
+
+  @ViewChild(MatSort)
+  set sort(value: MatSort | undefined) {
+    this.sortSubscription?.unsubscribe();
+    this.sortRef = value;
+
+    if (!value) {
+      return;
+    }
+
+    value.active = this.sortActive;
+    value.direction = this.sortDirection;
+
+    this.sortSubscription = value.sortChange.subscribe((sort) => {
+      this.sortActive = sort.active || 'date';
+      this.sortDirection = (sort.direction || 'desc') as 'asc' | 'desc';
+      this.resetToFirstPageOrLoad();
+    });
+  }
 
   readonly displayedColumns = [
     'date',
@@ -66,27 +103,21 @@ export class BusAnalyticsPageComponent implements AfterViewInit {
 
   items: BusAnalyticsItem[] = [];
   total = 0;
+  pageIndex = 0;
   pageSize = 25;
+  sortActive = 'date';
+  sortDirection: 'asc' | 'desc' = 'desc';
   isLoading = false;
   errorMessage = '';
 
   private readonly apiService = inject(ApiService);
   private readonly destroyRef = inject(DestroyRef);
+  private paginatorRef?: MatPaginator;
+  private sortRef?: MatSort;
+  private paginatorSubscription?: Subscription;
+  private sortSubscription?: Subscription;
 
-  ngAfterViewInit(): void {
-    this.sort.sortChange
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => {
-        this.resetToFirstPageOrLoad();
-      });
-
-    this.paginator.page
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((event) => {
-        this.pageSize = event.pageSize;
-        this.loadBusAnalytics();
-      });
-
+  ngOnInit(): void {
     this.filterForm.valueChanges
       .pipe(debounceTime(250), takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
@@ -96,12 +127,30 @@ export class BusAnalyticsPageComponent implements AfterViewInit {
     this.loadBusAnalytics();
   }
 
+  ngOnDestroy(): void {
+    this.paginatorSubscription?.unsubscribe();
+    this.sortSubscription?.unsubscribe();
+  }
+
   resetFilters(): void {
-    this.filterForm.reset({
-      route: '',
-      operatorName: '',
-      date: null
-    });
+    this.filterForm.reset(
+      {
+        route: '',
+        operatorName: '',
+        date: null
+      },
+      {
+        emitEvent: false
+      }
+    );
+
+    this.pageIndex = 0;
+
+    if (this.paginatorRef) {
+      this.paginatorRef.pageIndex = 0;
+    }
+
+    this.loadBusAnalytics();
   }
 
   trackByRouteAndHour(index: number, item: BusAnalyticsItem): string {
@@ -109,8 +158,15 @@ export class BusAnalyticsPageComponent implements AfterViewInit {
   }
 
   private resetToFirstPageOrLoad(): void {
-    if (this.paginator.pageIndex > 0) {
-      this.paginator.firstPage();
+    if (this.pageIndex > 0) {
+      this.pageIndex = 0;
+
+      if (this.paginatorRef) {
+        this.paginatorRef.firstPage();
+        return;
+      }
+
+      this.loadBusAnalytics();
       return;
     }
 
@@ -143,13 +199,13 @@ export class BusAnalyticsPageComponent implements AfterViewInit {
     const filters = this.filterForm.getRawValue();
 
     return {
-      page: this.paginator.pageIndex + 1,
-      pageSize: this.paginator.pageSize,
+      page: this.pageIndex + 1,
+      pageSize: this.pageSize,
       route: filters.route?.trim() || undefined,
       operatorName: filters.operatorName?.trim() || undefined,
       date: filters.date ? this.toDateOnlyString(filters.date) : undefined,
-      sortBy: this.mapSortField(this.sort.active),
-      sortDir: (this.sort.direction || 'desc') as 'asc' | 'desc'
+      sortBy: this.mapSortField(this.sortActive),
+      sortDir: this.sortDirection
     };
   }
 

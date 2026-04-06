@@ -1,5 +1,4 @@
 using Backend.BackgroundWorkers;
-using Backend.Data;
 using Backend.Endpoints;
 using Backend.Helpers;
 using Backend.Hubs;
@@ -32,10 +31,9 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new GeoJsonConverterFactory());
 });
 
-builder.Services.AddSingleton<InMemoryRouteStore>();
 builder.Services.AddDemographics();
 builder.Services.AddBusAnalytics();
-builder.Services.AddSingleton<IRouteLiveService, RouteLiveService>();
+builder.Services.AddLiveRoutes(builder.Configuration);
 builder.Services.AddHostedService<RoutesPollingWorker>();
 
 var app = builder.Build();

@@ -1,15 +1,81 @@
-<section class="page-shell">
-  <header class="page-header">
-    <p class="eyebrow">Planning</p>
-    <h1>Demographics</h1>
-    <p>
-      Starter view for population distribution, zone-based indicators, and future map overlays.
-    </p>
+<section class="dashboard-page">
+  <header class="dashboard-page-header">
+    <div class="dashboard-page-header__copy">
+      <p class="eyebrow">Spatial Analysis</p>
+      <h1 class="dashboard-page-header__title">Demographics Map</h1>
+      <p class="dashboard-page-header__description">
+        Explore region-level population and jobs data with a choropleth map powered by Leaflet and
+        backend GeoJSON.
+      </p>
+    </div>
+
+    <div class="dashboard-kpi">
+      <strong class="dashboard-kpi__value">{{ featureCount | number }}</strong>
+      <span class="dashboard-kpi__label">{{ selectedLevel | titlecase }} regions</span>
+    </div>
   </header>
 
-  <mat-card class="page-card">
-    <mat-card-content>
-      Connect this page to <code>GET /api/demographics</code> when the backend contract is finalized.
-    </mat-card-content>
+  <mat-card class="dashboard-surface dashboard-map-shell">
+    <div class="dashboard-toolbar">
+      <div class="dashboard-toolbar__group">
+        <span class="dashboard-toolbar__label">Region level</span>
+        <mat-button-toggle-group
+          [value]="selectedLevel"
+          (change)="onLevelChange($event)"
+          aria-label="Region level"
+        >
+          @for (level of levels; track level.value) {
+            <mat-button-toggle [value]="level.value">{{ level.label }}</mat-button-toggle>
+          }
+        </mat-button-toggle-group>
+      </div>
+
+      <div class="dashboard-toolbar__group">
+        <span class="dashboard-toolbar__label">Metric</span>
+        <mat-button-toggle-group
+          [value]="selectedMetric"
+          (change)="onMetricChange($event)"
+          aria-label="Metric"
+        >
+          @for (metric of metrics; track metric.value) {
+            <mat-button-toggle [value]="metric.value">{{ metric.label }}</mat-button-toggle>
+          }
+        </mat-button-toggle-group>
+      </div>
+    </div>
+
+    <div class="dashboard-map-stage">
+      <div #mapContainer class="dashboard-map-canvas" aria-label="Demographics map"></div>
+
+      @if (isLoading) {
+        <div class="dashboard-map-overlay">
+          <app-dashboard-state
+            mode="loading"
+            title="Loading geography"
+            message="Preparing region boundaries for the current level and metric."
+          />
+        </div>
+      }
+
+      @if (!isLoading && errorMessage) {
+        <div class="dashboard-map-overlay">
+          <app-dashboard-state
+            mode="error"
+            title="Map data unavailable"
+            [message]="errorMessage"
+          />
+        </div>
+      }
+
+      @if (!isLoading && !errorMessage && featureCount === 0) {
+        <div class="dashboard-map-overlay">
+          <app-dashboard-state
+            mode="empty"
+            title="No regions found"
+            message="The selected level and metric returned no features."
+          />
+        </div>
+      }
+    </div>
   </mat-card>
 </section>

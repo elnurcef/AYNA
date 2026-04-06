@@ -1,15 +1,22 @@
-<section class="page-shell">
-  <header class="page-header">
-    <p class="eyebrow">Operations</p>
-    <h1>Bus Analytics</h1>
-    <p>
-      Review route usage with server-side paging, exact-match filters, and backend-driven sorting.
-    </p>
+<section class="dashboard-page">
+  <header class="dashboard-page-header">
+    <div class="dashboard-page-header__copy">
+      <p class="eyebrow">Operations</p>
+      <h1 class="dashboard-page-header__title">Bus Analytics</h1>
+      <p class="dashboard-page-header__description">
+        Review route usage with server-side paging, exact-match filters, and backend-driven sorting.
+      </p>
+    </div>
+
+    <div class="dashboard-kpi">
+      <strong class="dashboard-kpi__value">{{ total | number }}</strong>
+      <span class="dashboard-kpi__label">Matching rows</span>
+    </div>
   </header>
 
-  <mat-card class="page-card filters-card">
+  <mat-card class="dashboard-surface dashboard-filter-card">
     <mat-card-content>
-      <form class="filters-toolbar" [formGroup]="filterForm">
+      <form class="dashboard-filter-grid bus-analytics-filters" [formGroup]="filterForm">
         <mat-form-field appearance="outline">
           <mat-label>Route</mat-label>
           <input matInput formControlName="route" placeholder="Exact route, e.g. 11" />
@@ -17,7 +24,7 @@
 
         <mat-form-field appearance="outline">
           <mat-label>Operator</mat-label>
-          <input matInput formControlName="operatorName" placeholder="Exact operator, e.g. Company1" />
+          <input matInput formControlName="operatorName" placeholder="Exact operator name" />
         </mat-form-field>
 
         <mat-form-field appearance="outline">
@@ -40,30 +47,38 @@
     </mat-card-content>
   </mat-card>
 
-  <mat-card class="page-card table-card">
+  <mat-card class="dashboard-surface dashboard-table-card">
     @if (isLoading) {
-      <mat-progress-bar mode="indeterminate" />
+      <mat-progress-bar class="dashboard-progress-bar" mode="indeterminate" />
     }
 
-    <mat-card-content class="table-card-content">
-      @if (errorMessage) {
-        <div class="state-panel state-panel-error">
-          <h2>Unable to load bus analytics</h2>
-          <p>{{ errorMessage }}</p>
-        </div>
+    <mat-card-content class="dashboard-table-card__content">
+      @if (isLoading && !errorMessage && !items.length) {
+        <app-dashboard-state
+          mode="loading"
+          title="Loading bus analytics"
+          message="Fetching the latest route metrics from the backend."
+        />
+      } @else if (errorMessage) {
+        <app-dashboard-state
+          mode="error"
+          title="Unable to load bus analytics"
+          [message]="errorMessage"
+        />
       } @else if (!isLoading && items.length === 0) {
-        <div class="state-panel">
-          <h2>No results</h2>
-          <p>Try broadening the filters or resetting them to see more rows.</p>
-        </div>
+        <app-dashboard-state
+          mode="empty"
+          title="No results"
+          message="Try broadening the filters or resetting them to see more rows."
+        />
       } @else {
-        <div class="table-wrapper">
+        <div class="dashboard-table-scroll">
           <table
             mat-table
             [dataSource]="items"
             matSort
-            [matSortActive]="'date'"
-            [matSortDirection]="'desc'"
+            [matSortActive]="sortActive"
+            [matSortDirection]="sortDirection"
             [matSortDisableClear]="true"
             class="analytics-table"
           >
@@ -117,6 +132,7 @@
 
         <mat-paginator
           [length]="total"
+          [pageIndex]="pageIndex"
           [pageSize]="pageSize"
           [pageSizeOptions]="pageSizeOptions"
           [showFirstLastButtons]="true"

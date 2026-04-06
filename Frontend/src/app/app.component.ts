@@ -10,4 +10,22 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
-export class AppComponent {}
+export class AppComponent {
+  protected readonly navItems = [
+    {
+      label: 'Demographics',
+      route: '/demographics',
+      exact: true
+    },
+    {
+      label: 'Bus Analytics',
+      route: '/bus-analytics',
+      exact: true
+    },
+    {
+      label: 'Live Routes',
+      route: '/live-routes',
+      exact: true
+    }
+  ];
+}

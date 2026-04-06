@@ -1,0 +1,15 @@
+<section class="dashboard-state-card" [class.dashboard-state-card--error]="mode === 'error'">
+  @if (mode === 'loading') {
+    <mat-progress-spinner mode="indeterminate" diameter="42" />
+  } @else {
+    <mat-icon>{{ iconName }}</mat-icon>
+  }
+
+  <div class="dashboard-state-card__content">
+    <h2>{{ title }}</h2>
+
+    @if (message) {
+      <p>{{ message }}</p>
+    }
+  </div>
+</section>

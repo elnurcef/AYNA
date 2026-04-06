@@ -1,38 +1,96 @@
-using Backend.Data;
 using Backend.Models;
+using Microsoft.Extensions.Options;
 
 namespace Backend.Services;
 
 public sealed class RouteLiveService : IRouteLiveService
 {
-    private readonly InMemoryRouteStore _routeStore;
+    private readonly ILiveRouteSnapshotCache _snapshotCache;
+    private readonly IReadOnlyDictionary<string, ILiveRouteProvider> _providers;
+    private readonly LiveRoutesOptions _options;
+    private readonly ILogger<RouteLiveService> _logger;
 
-    public RouteLiveService(InMemoryRouteStore routeStore)
+    public RouteLiveService(
+        ILiveRouteSnapshotCache snapshotCache,
+        IEnumerable<ILiveRouteProvider> providers,
+        IOptions<LiveRoutesOptions> options,
+        ILogger<RouteLiveService> logger)
     {
-        _routeStore = routeStore;
+        _snapshotCache = snapshotCache;
+        _options = options.Value;
+        _logger = logger;
+        _providers = providers.ToDictionary(
+            provider => provider.Name,
+            StringComparer.OrdinalIgnoreCase);
     }
 
     public Task<LiveRouteSnapshot> GetCurrentSnapshotAsync(CancellationToken cancellationToken)
     {
-        return Task.FromResult(_routeStore.GetSnapshot());
+        if (_snapshotCache.TryGetLatest(out var snapshot) &&
+            snapshot is not null)
+        {
+            return Task.FromResult(snapshot);
+        }
+
+        return RefreshAsync(cancellationToken);
     }
 
-    public Task<LiveRouteSnapshot> RefreshAsync(CancellationToken cancellationToken)
+    public async Task<LiveRouteSnapshot> RefreshAsync(CancellationToken cancellationToken)
     {
-        var timestamp = DateTimeOffset.UtcNow;
-        var drift = (timestamp.Second % 6) * 0.0004;
+        var failures = new List<string>();
 
-        var snapshot = new LiveRouteSnapshot(
-            LastUpdatedUtc: timestamp,
-            Vehicles:
-            [
-                new RouteVehiclePosition("BUS-101", "R-01", 40.4093 + drift, 49.8671 + drift, "In Service"),
-                new RouteVehiclePosition("BUS-205", "R-05", 40.3957 - drift, 49.8822 + drift, "Approaching Stop"),
-                new RouteVehiclePosition("BUS-318", "R-08", 40.4188 + drift, 49.8387 - drift, "Delayed")
-            ]);
+        foreach (var provider in GetProviderSequence())
+        {
+            try
+            {
+                var snapshot = await provider.GetLiveRoutesAsync(cancellationToken);
 
-        _routeStore.SetSnapshot(snapshot);
+                _snapshotCache.SetLatest(snapshot);
 
-        return Task.FromResult(snapshot);
+                return snapshot;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                _logger.LogWarning(
+                    exception,
+                    "Live route provider {Provider} failed.",
+                    provider.Name);
+
+                failures.Add($"{provider.Name}: {exception.Message}");
+            }
+        }
+
+        throw new LiveRouteProviderException(
+            $"Unable to retrieve live route data. {string.Join(" | ", failures)}");
+    }
+
+    private IEnumerable<ILiveRouteProvider> GetProviderSequence()
+    {
+        if (string.Equals(_options.ProviderMode, "http", StringComparison.OrdinalIgnoreCase))
+        {
+            return GetNamedProviders(["http"]);
+        }
+
+        if (string.Equals(_options.ProviderMode, "playwright", StringComparison.OrdinalIgnoreCase))
+        {
+            return GetNamedProviders(["playwright"]);
+        }
+
+        return GetNamedProviders(_options.ProviderOrder);
+    }
+
+    private IEnumerable<ILiveRouteProvider> GetNamedProviders(IEnumerable<string> providerNames)
+    {
+        foreach (var providerName in providerNames)
+        {
+            if (_providers.TryGetValue(providerName, out var provider))
+            {
+                yield return provider;
+            }
+        }
     }
 }

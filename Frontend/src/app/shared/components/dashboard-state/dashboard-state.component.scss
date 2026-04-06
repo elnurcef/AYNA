@@ -1,0 +1,49 @@
+:host {
+  display: block;
+}
+
+.dashboard-state-card {
+  display: grid;
+  gap: 0.9rem;
+  place-content: center;
+  justify-items: center;
+  min-height: 260px;
+  padding: 2rem;
+  text-align: center;
+  border-radius: 1rem;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.98));
+}
+
+.dashboard-state-card--error {
+  background: linear-gradient(180deg, rgba(255, 241, 242, 0.96), rgba(255, 255, 255, 0.98));
+}
+
+mat-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  font-size: 2.25rem;
+  color: var(--dashboard-accent-strong);
+}
+
+.dashboard-state-card--error mat-icon {
+  color: #b91c1c;
+}
+
+.dashboard-state-card__content {
+  display: grid;
+  gap: 0.4rem;
+}
+
+h2,
+p {
+  margin: 0;
+}
+
+h2 {
+  font-size: 1.15rem;
+}
+
+p {
+  max-width: 42ch;
+  color: var(--dashboard-muted);
+}
