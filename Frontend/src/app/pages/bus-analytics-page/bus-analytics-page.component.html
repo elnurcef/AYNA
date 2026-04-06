@@ -1,0 +1,128 @@
+<section class="page-shell">
+  <header class="page-header">
+    <p class="eyebrow">Operations</p>
+    <h1>Bus Analytics</h1>
+    <p>
+      Review route usage with server-side paging, exact-match filters, and backend-driven sorting.
+    </p>
+  </header>
+
+  <mat-card class="page-card filters-card">
+    <mat-card-content>
+      <form class="filters-toolbar" [formGroup]="filterForm">
+        <mat-form-field appearance="outline">
+          <mat-label>Route</mat-label>
+          <input matInput formControlName="route" placeholder="Exact route, e.g. 11" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Operator</mat-label>
+          <input matInput formControlName="operatorName" placeholder="Exact operator, e.g. Company1" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Date</mat-label>
+          <input
+            matInput
+            [matDatepicker]="datePicker"
+            formControlName="date"
+            placeholder="Select date"
+          />
+          <mat-datepicker-toggle matIconSuffix [for]="datePicker" />
+          <mat-datepicker #datePicker />
+        </mat-form-field>
+
+        <button mat-stroked-button type="button" class="reset-button" (click)="resetFilters()">
+          <mat-icon>restart_alt</mat-icon>
+          Reset filters
+        </button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="page-card table-card">
+    @if (isLoading) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+
+    <mat-card-content class="table-card-content">
+      @if (errorMessage) {
+        <div class="state-panel state-panel-error">
+          <h2>Unable to load bus analytics</h2>
+          <p>{{ errorMessage }}</p>
+        </div>
+      } @else if (!isLoading && items.length === 0) {
+        <div class="state-panel">
+          <h2>No results</h2>
+          <p>Try broadening the filters or resetting them to see more rows.</p>
+        </div>
+      } @else {
+        <div class="table-wrapper">
+          <table
+            mat-table
+            [dataSource]="items"
+            matSort
+            [matSortActive]="'date'"
+            [matSortDirection]="'desc'"
+            [matSortDisableClear]="true"
+            class="analytics-table"
+          >
+            <ng-container matColumnDef="date">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header="date">Date</th>
+              <td mat-cell *matCellDef="let item">{{ item.date }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="hour">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header="hour">Hour</th>
+              <td mat-cell *matCellDef="let item">{{ item.hour }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="route">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header="route">Route</th>
+              <td mat-cell *matCellDef="let item">{{ item.route }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="operator">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header="operator">Operator</th>
+              <td mat-cell *matCellDef="let item">{{ item.operator }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="totalCount">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header="totalCount">Total Count</th>
+              <td mat-cell *matCellDef="let item">{{ item.totalCount | number }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="bySmartCard">
+              <th mat-header-cell *matHeaderCellDef>SmartCard</th>
+              <td mat-cell *matCellDef="let item">{{ item.bySmartCard | number }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="byQr">
+              <th mat-header-cell *matHeaderCellDef>QR</th>
+              <td mat-cell *matCellDef="let item">{{ item.byQr | number }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="numberOfBusses">
+              <th mat-header-cell *matHeaderCellDef>Buses</th>
+              <td mat-cell *matCellDef="let item">{{ item.numberOfBusses }}</td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr
+              mat-row
+              *matRowDef="let row; columns: displayedColumns; trackBy: trackByRouteAndHour"
+            ></tr>
+          </table>
+        </div>
+
+        <mat-paginator
+          [length]="total"
+          [pageSize]="pageSize"
+          [pageSizeOptions]="pageSizeOptions"
+          [showFirstLastButtons]="true"
+          aria-label="Bus analytics pagination"
+        />
+      }
+    </mat-card-content>
+  </mat-card>
+</section>

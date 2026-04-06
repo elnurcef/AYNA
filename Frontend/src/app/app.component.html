@@ -1,0 +1,34 @@
+<div class="app-shell">
+  <mat-toolbar class="top-nav">
+    <a class="brand" routerLink="/demographics">AYNA Transit Dashboard</a>
+    <span class="spacer"></span>
+    <nav class="nav-links" aria-label="Primary">
+      <a
+        mat-button
+        routerLink="/demographics"
+        routerLinkActive="active-link"
+        [routerLinkActiveOptions]="{ exact: true }"
+      >
+        Demographics
+      </a>
+      <a
+        mat-button
+        routerLink="/bus-analytics"
+        routerLinkActive="active-link"
+      >
+        Bus Analytics
+      </a>
+      <a
+        mat-button
+        routerLink="/live-routes"
+        routerLinkActive="active-link"
+      >
+        Live Routes
+      </a>
+    </nav>
+  </mat-toolbar>
+
+  <main class="content-area">
+    <router-outlet />
+  </main>
+</div>
