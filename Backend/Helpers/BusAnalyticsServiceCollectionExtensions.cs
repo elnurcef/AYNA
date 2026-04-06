@@ -12,7 +12,6 @@ public static class BusAnalyticsServiceCollectionExtensions
             var logger = serviceProvider.GetRequiredService<ILogger<BusAnalyticsService>>();
             var csvFilePath = Path.GetFullPath(Path.Combine(
                 environment.ContentRootPath,
-                "..",
                 "Data",
                 "ceck_in_buss.csv"));
 

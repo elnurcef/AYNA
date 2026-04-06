@@ -20,7 +20,7 @@ public static class DemographicsServiceCollectionExtensions
 
     private static string ResolveGeoPackagePath(string contentRootPath)
     {
-        var dataDirectory = Path.GetFullPath(Path.Combine(contentRootPath, "..", "Data"));
+        var dataDirectory = Path.GetFullPath(Path.Combine(contentRootPath, "Data"));
 
         var candidates = new[]
         {
